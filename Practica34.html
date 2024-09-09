@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Juego con Pausa</title>
+    <style type="text/css">
+        body {
+            background-color: rgb(169, 151, 151);
+        }
+    </style>
+</head>
+
+<body>
+    <canvas id="canvas" width="1000px" height="1000px"></canvas>
+    <audio id = "collision-sound" src = "next-level-160613.mp3"></audio>
+    <script type="text/javascript">
+        const myCanvas = document.getElementById("canvas");
+        const ctx = myCanvas.getContext("2d");
+
+        var adelanto = 10;
+        var retroceso = 10;
+        var direction = ""; 
+        var lastDirection = ""; 
+        var speed = 6;
+        var score = 0; 
+        var paused = false; 
+
+        // Cuadro negro
+        var Cuadritox = 300;
+        var Cuadritoy = 300;
+
+        const img = new Image();
+        img.src = 'https://i.pinimg.com/564x/0c/09/5c/0c095c34a9a17e87c2c857b329a7704d.jpg'; // Reemplaza esta ruta con la de tu imagen
+
+
+        // Paredes grises
+        const walls = [
+            { x: 400, y: 400, width: 300, height: 30 },
+            { x: 200, y: 100, width: 300, height: 30 },
+            { x: 200, y: 500, width: 300, height: 30 }
+        ];
+
+        const collisionSound = document.getElementById(collisionSound)
+
+        function getRandomPosition() {
+            return {
+                x: Math.random() * (myCanvas.width - 20),
+                y: Math.random() * (myCanvas.height - 20)
+            };
+        }
+
+        function detectCollision(newx, newy) {
+            return walls.some(wall =>
+                newx < wall.x + wall.width &&
+                newx + 50 > wall.x &&
+                newy < wall.y + wall.height &&
+                newy + 50 > wall.y
+            );
+        }
+
+        function detectCuadrito() {
+            return (
+                adelanto < Cuadritox + 20 &&
+                adelanto + 50 > Cuadritox &&
+                retroceso < Cuadritoy + 20 &&
+                retroceso + 50 > Cuadritoy
+            );
+        }
+
+        function update() {
+            if (!paused) {
+                switch (direction) {
+                    case "up":
+                        if (!detectCollision(adelanto, retroceso - speed)) {
+                            retroceso -= speed;
+                        }
+                        if (retroceso <= 0) {
+                            retroceso = 950;
+                        }
+                        break;
+                    case "down":
+                        if (!detectCollision(adelanto, retroceso + speed)) {
+                            retroceso += speed;
+                        }
+                        if (retroceso >= 950) {
+                            retroceso = 0;
+                        }
+                        break;
+                    case "left":
+                        if (!detectCollision(adelanto - speed, retroceso)) {
+                            adelanto -= speed;
+                        }
+                        if (adelanto <= 0) {
+                            adelanto = 950;
+                        }
+                        break;
+                    case "right":
+                        if (!detectCollision(adelanto + speed, retroceso)) {
+                            adelanto += speed;
+                        }
+                        if (adelanto >= 950) {
+                            adelanto = 0;
+                        }
+                        break;
+                }
+
+                if (detectCuadrito()) {
+                    score++;
+                    collisionSound.play();
+                    const newPosition = getRandomPosition();
+                    Cuadritox = newPosition.x;
+                    Cuadritoy = newPosition.y;
+                }
+            }
+        }
+
+        function paint() {
+            ctx.clearRect(0, 0, myCanvas.width, myCanvas.height);
+
+            // Score
+            ctx.font = "30px Arial";
+            ctx.fillStyle = "black";
+            ctx.fillText("Score: " + score, myCanvas.width - 150, 50);
+            // Cuadro verde
+            //ctx.fillStyle = "green";
+            //ctx.fillRect(adelanto, retroceso, 50, 50);
+            ctx.drawImage(img, adelanto, retroceso, 50, 50);
+            // Cuadro negro
+            ctx.fillStyle = "black";
+            ctx.fillRect(Cuadritox, Cuadritoy, 15, 15);
+
+            ctx.fillStyle = "gray";
+            walls.forEach(wall => {
+                ctx.fillRect(wall.x, wall.y, wall.width, wall.height);
+            });
+
+
+            //Pausa
+            if (paused) {
+                ctx.fillStyle = "rgba(128, 128, 128, 0.7)"; 
+                ctx.fillRect(0, 0, myCanvas.width, myCanvas.height);
+
+                ctx.font = "50px Arial";
+                ctx.fillStyle = "white";
+                ctx.fillText("Pausa", myCanvas.width / 2 - 100, myCanvas.height / 2);
+            }
+
+            update();
+            requestAnimationFrame(paint);
+        }
+
+
+        document.addEventListener("keydown", (event) => {
+            if (event.key === "Escape") {
+                paused = !paused;
+                if (!paused) {
+                    direction = lastDirection;
+                }
+            }
+            if (!paused) {
+                switch (event.key) {
+                    case "w":
+                    case "W":
+                        direction = "up";
+                        lastDirection = "up";
+                        break;
+                    case "s":
+                    case "S":
+                        direction = "down";
+                        lastDirection = "down";
+                        break;
+                    case "a":
+                    case "A":
+                        direction = "left";
+                        lastDirection = "left";
+                        break;
+                    case "d":
+                    case "D":
+                        direction = "right";
+                        lastDirection = "right";
+                        break;
+                    case "p":
+                    case "P":
+                        speed += 2.5;
+                        break;
+                }
+            }
+        });
+
+        paint();
+
+        window.requestAnimationFrame = (function () {
+            return window.requestAnimationFrame ||
+                window.webkitRequestAnimationFrame ||
+                window.mozRequestAnimationFrame ||
+                function (callback) {
+                    window.setTimeout(callback, 17);
+                };
+        }());
+    </script>
+</body>
+
+</html>
